@@ -1,0 +1,5 @@
+# Enable directory listing
+Options +Indexes
+
+# Hide sensitive files
+IndexIgnore *.php *.htaccess
