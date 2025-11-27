@@ -11,7 +11,7 @@ function secondsToMinutesSeconds(seconds) {
 // Fetch songs from server
 async function getSongs() {
     console.log("Fetching songs...");
-    const res = await fetch("http://127.0.0.1:5500/songs/");
+    const res = await fetch("songs/");
     const text = await res.text();
     const div = document.createElement("div");
     div.innerHTML = text;
@@ -31,7 +31,7 @@ async function getSongs() {
 // Fetch album images from albums folder
 async function getAlbumImages() {
     console.log("Fetching album images...");
-    const res = await fetch("http://127.0.0.1:5500/albums/");
+    const res = await fetch("albums/");
     const text = await res.text();
     const div = document.createElement("div");
     div.innerHTML = text;
