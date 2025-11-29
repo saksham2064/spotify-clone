@@ -25,3 +25,6 @@ A web-based music player inspired by Spotify. Browse albums and songs, play/paus
 1. Clone the repo:
 ```bash
 git clone https://github.com/saksham2064/spotify-clone
+---
+## Visit WebPage
+https://saksham2064.github.io/spotify-clone/
