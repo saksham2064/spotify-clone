@@ -8,82 +8,86 @@ function secondsToMinutesSeconds(seconds) {
     return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
 }
 
-// Fetch all files in albums folder
-async function getAlbumFiles() {
-    const res = await fetch("./albums/");
-    const html = await res.text();
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    const links = div.getElementsByTagName("a");
+// -----------------------------
+// Albums array with your images and random songs
+const albums = [
+    { image: "pexels-atomlaborblog-844923.jpg", song: "car%arif%track1.mp3" },
+    { image: "pexels-edurawpro-34933950.jpg", song: "random%20song2.mp3" },
+    { image: "pexels-edurawpro-34933960.jpg", song: "strange%name3.mp3" },
+    { image: "pexels-edurawpro-34933966.jpg", song: "song%204.mp3" },
+    { image: "pexels-edurawpro-34933970.jpg", song: "track5.mp3" },
+    { image: "pexels-farhan-ishraq-rudra-122465-375751.jpg", song: "my%20song6.mp3" },
+    { image: "pexels-garrettmorrow-1649771.jpg", song: "random7.mp3" },
+    { image: "pexels-kinkate-205926.jpg", song: "song8.mp3" },
+    { image: "pexels-ola-dapo-1754561-3345882.jpg", song: "weird%name9.mp3" },
+    { image: "pexels-sound-on-3394648.jpg", song: "track10.mp3" }
+];
+// -----------------------------
 
-    const images = [];
-    const songs = [];
-
-    for (let link of links) {
-        const file = decodeURIComponent(link.href.split("/albums/")[1]);
-        if (!file) continue;
-        if (file.endsWith(".mp3")) songs.push(file);
-        else if (file.match(/\.(jpg|jpeg|png|gif)$/i)) images.push(file);
-    }
-
-    return { songs, images };
-}
-
-// Render albums as images/cards
-async function showAlbums() {
-    const { images } = await getAlbumFiles();
+// Render albums
+function renderAlbums() {
     const container = document.querySelector(".albumContainer");
     container.innerHTML = "";
 
-    for (let img of images) {
+    albums.forEach((item, index) => {
         container.innerHTML += `
-        <div class="albumCard" data-file="${img}">
-            <img src="./albums/${img}" alt="${img}">
-            <h3>${img.replace(/\.(jpg|jpeg|png|gif)/i, "")}</h3>
+        <div class="albumCard" data-index="${index}">
+            <img src="./albums/${item.image}" alt="${item.image}">
+            <h3>${decodeURIComponent(item.image.replace(/\.(jpg|jpeg|png|gif)/i, ""))}</h3>
         </div>`;
-    }
-}
-
-// Render songs in song list
-async function showSongs() {
-    const { songs } = await getAlbumFiles();
-    const ul = document.querySelector(".songList ul");
-    ul.innerHTML = "";
-
-    songs.forEach(song => {
-        ul.innerHTML += `
-        <li class="songItem" data-track="${song}">
-            <span>${song.replace(".mp3", "")}</span>
-        </li>`;
     });
 
-    document.querySelectorAll(".songItem").forEach(li => {
-        li.addEventListener("click", () => {
-            playMusic(li.dataset.track);
+    document.querySelectorAll(".albumCard").forEach(card => {
+        card.addEventListener("click", () => {
+            const index = card.dataset.index;
+            playMusic(albums[index]);
         });
     });
 }
 
-// Play a song
-function playMusic(track) {
-    currentSong.src = `./albums/${track}`;
+// Render songs list
+function renderSongs() {
+    const ul = document.querySelector(".songList ul");
+    ul.innerHTML = "";
+
+    albums.forEach((item, index) => {
+        ul.innerHTML += `
+        <li class="songItem" data-index="${index}">
+            <span>${decodeURIComponent(item.song.replace(".mp3", ""))}</span>
+        </li>`;
+    });
+
+    document.querySelectorAll(".songItem").forEach(item => {
+        item.addEventListener("click", () => {
+            const index = item.dataset.index;
+            playMusic(albums[index]);
+        });
+    });
+}
+
+// Play music function
+function playMusic(item) {
+    currentSong.src = `./albums/${item.song}`;
     currentSong.play();
-    document.querySelector(".songinfo").innerText = track.replace(".mp3", "");
+    document.querySelector(".songinfo").innerText = decodeURIComponent(item.song.replace(".mp3", ""));
 
     const playBtn = document.querySelector(".songbuttons img[src*='play']");
     if (playBtn) playBtn.src = "./pause.svg";
+
+    const cover = document.querySelector(".currentCover");
+    if (cover) cover.src = `./albums/${item.image}`;
 }
 
-// MAIN
-async function main() {
-    await showAlbums();
-    await showSongs();
+// Main initialization
+function main() {
+    renderAlbums();
+    renderSongs();
 
     const playBtn = document.querySelector(".songbuttons img[src*='play']");
-    const previousBtn = document.querySelector(".songbuttons img[src*='previous']");
+    const prevBtn = document.querySelector(".songbuttons img[src*='previous']");
     const nextBtn = document.querySelector(".songbuttons img[src*='nextsong']");
 
-    // Play/Pause toggle
+    // Play/Pause
     playBtn?.addEventListener("click", () => {
         if (currentSong.paused) {
             currentSong.play();
@@ -94,52 +98,39 @@ async function main() {
         }
     });
 
-    // Update song time & circle
-    currentSong.addEventListener("timeupdate", () => {
-        const currentTime = secondsToMinutesSeconds(currentSong.currentTime);
-        const duration = secondsToMinutesSeconds(currentSong.duration);
-        document.querySelector(".songtime").innerText = `${currentTime} / ${duration}`;
-
-        if (!isNaN(currentSong.duration)) {
-            document.querySelector(".circle").style.left =
-                (currentSong.currentTime / currentSong.duration) * 100 + "%";
-        }
-    });
-
-    // Seek bar click
-    document.querySelector(".seekbar")?.addEventListener("click", e => {
-        const percent = (e.offsetX / e.target.clientWidth) * 100;
-        currentSong.currentTime = (currentSong.duration * percent) / 100;
-        document.querySelector(".circle").style.left = percent + "%";
-    });
-
-    // Next/Previous buttons
-    const songs = Array.from(document.querySelectorAll(".songItem")).map(li => li.dataset.track);
-
-    previousBtn?.addEventListener("click", () => {
-        const index = songs.indexOf(currentSong.src.split("/").pop());
-        if (index > 0) playMusic(songs[index - 1]);
+    // Previous/Next
+    prevBtn?.addEventListener("click", () => {
+        const index = albums.findIndex(a => a.song === currentSong.src.split("/").pop());
+        if (index > 0) playMusic(albums[index - 1]);
     });
 
     nextBtn?.addEventListener("click", () => {
-        const index = songs.indexOf(currentSong.src.split("/").pop());
-        if (index < songs.length - 1) playMusic(songs[index + 1]);
+        const index = albums.findIndex(a => a.song === currentSong.src.split("/").pop());
+        if (index < albums.length - 1) playMusic(albums[index + 1]);
     });
 
-    // Volume slider
+    // Volume
     const volumeInput = document.querySelector(".range input");
     volumeInput?.addEventListener("input", e => {
         currentSong.volume = e.target.value / 100;
     });
 
-    // Hamburger menu
-    document.querySelector(".hamburger")?.addEventListener("click", () => {
-        document.querySelector(".left").style.left = "0";
+    // Seekbar
+    const seekbar = document.querySelector(".seekbar");
+    seekbar?.addEventListener("click", e => {
+        const percent = e.offsetX / e.target.clientWidth;
+        currentSong.currentTime = currentSong.duration * percent;
+        document.querySelector(".circle").style.left = percent * 100 + "%";
     });
 
-    document.querySelector(".close")?.addEventListener("click", () => {
-        document.querySelector(".left").style.left = "-110%";
+    // Update song time
+    currentSong.addEventListener("timeupdate", () => {
+        const currentTime = secondsToMinutesSeconds(currentSong.currentTime);
+        const duration = secondsToMinutesSeconds(currentSong.duration);
+        document.querySelector(".songtime").innerText = `${currentTime} / ${duration}`;
+        document.querySelector(".circle").style.left = (currentSong.currentTime / currentSong.duration) * 100 + "%";
     });
 }
 
+// Initialize
 main();
